@@ -18,6 +18,31 @@
 
 require 'exchanger'
 
+# Monkey patch to be sure to have everything in UTC
+module Exchanger
+  class Field
+
+    def value_from_xml(node)
+      if type.respond_to?(:new_from_xml)
+        type.new_from_xml(node)
+      elsif type.is_a?(Array)
+        node.children.map do |sub_node|
+          sub_field.value_from_xml(sub_node)
+        end
+      elsif type == Boolean
+        node.text == "true"
+      elsif type == Integer
+        node.text.to_i unless node.text.empty?
+      elsif type == Time
+        Time.xmlschema(node.text + 'Z') unless node.text.empty?
+      else
+        node.text
+      end
+    end
+
+  end
+end
+
 module Exchangist
   class Exchangist
 
@@ -34,6 +59,33 @@ module Exchangist
       end
     end
 
+    def get_next_available_rooms
+      res = []
+      get_room_lists.map do |list|
+        get_rooms(list.email_address).map do |room|
+          if cal = get_calendar(email_address: room.email_address,
+                          start_time: Date.today.to_time + 1,
+                          end_time: ((Date.today + 1).to_time - 1),
+                          time_zone: 'UTC')
+            available_for = if cal.first
+                              if cal.first.start_time - Time.now < 0
+                                0
+                              else
+                                (cal.first.start_time - Time.now)
+                              end
+                            else
+                              ((Date.today + 1).to_time - Time.now)
+                            end
+            res << {:list => list.name, :room => room.name, :cal => cal,
+                    :email_address => room.email_address,
+                    :available_for => available_for,
+                    :available_for_pretty => seconds_to_units(available_for)}
+          end
+        end
+      end
+      res
+    end
+
     def get_room_lists
       folder = Exchanger::GetRoomLists.run()
       folder.items
@@ -46,10 +98,18 @@ module Exchangist
     end
 
     def get_calendar(params = {})
+      Exchanger.configure do |config|
+        config.endpoint = @endpoint
+        config.username = @username
+        config.password = @password
+        config.insecure_ssl = true
+      end
+
       folder =
         Exchanger::GetUserAvailability.run(email_address: params[:email_address],
                                            start_time: params[:start_time],
-                                           end_time: params[:end_time])
+                                           end_time: params[:end_time],
+                                          time_zone: params[:time_zone])
       folder.items
     end
 
@@ -66,9 +126,25 @@ module Exchangist
         Exchanger::Attendee.new(:mailbox =>
                     Exchanger::Mailbox.search(params[:meeting_room_name]).first)
       meeting.required_attendees = [meetingroom]
+
+      params[:required_attendees].map do |mail|
+        meeting.required_attendees <<
+          Exchanger::Attendee.new(:mailbox =>
+                                  Exchanger::Mailbox.search(mail).first)
+      end if params[:required_attendees]
       meeting.resources = [meetingroom]
-      meeting
+      meeting.save
     end
+
+    private
+    def seconds_to_units(seconds)
+      '%d hours, %d minutes' %
+        [60,60].reverse.inject([seconds]) do |result, unitsize|
+        result[0,0] = result.shift.divmod(unitsize)
+        result
+      end
+    end
+
 
   end
 end

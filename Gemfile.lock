@@ -1,6 +1,6 @@
 GIT
   remote: http://github.com/pcboy/exchanger
-  revision: f32c0897283fc457323cf9b48049ecbe191339a0
+  revision: dc48349cbb3f460dc870b89f1cf8654213a29570
   branch: GetRooms_support
   specs:
     exchanger (0.1.3)
@@ -20,10 +20,10 @@ GEM
     diff-lcs (1.1.3)
     httpclient (2.3.3)
     i18n (0.6.1)
-    looksee (1.1.0)
-    multi_json (1.7.3)
-    nokogiri (1.5.9)
-    rake (10.0.4)
+    mini_portile (0.5.0)
+    multi_json (1.7.7)
+    nokogiri (1.6.0)
+      mini_portile (~> 0.5.0)
     rspec (2.6.0)
       rspec-core (~> 2.6.0)
       rspec-expectations (~> 2.6.0)
@@ -32,8 +32,8 @@ GEM
     rspec-expectations (2.6.0)
       diff-lcs (~> 1.1.2)
     rspec-mocks (2.6.0)
-    rubyntlm (0.3.1)
-    tzinfo (0.3.37)
+    rubyntlm (0.3.2)
+    tzinfo (1.0.1)
 
 PLATFORMS
   ruby
@@ -41,7 +41,5 @@ PLATFORMS
 DEPENDENCIES
   awesome_print
   exchanger!
-  looksee
-  rake
   rspec
   tzinfo
