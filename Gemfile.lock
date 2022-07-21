@@ -38,7 +38,7 @@ GEM
     rspec-mocks (2.6.0)
     rubyntlm (0.6.2)
     thread_safe (0.3.6)
-    tzinfo (1.2.5)
+    tzinfo (1.2.10)
       thread_safe (~> 0.1)
 
 PLATFORMS
